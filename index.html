@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>Project Management Board</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #182230;
+        background: #f5f7fb;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --ink: #182230;
+        --muted: #738096;
+        --line: #e7ebf1;
+        --blue: #4169e1;
+        --blue-dark: #3156ca;
+        --surface: #fff;
+        --shadow: 0 8px 24px rgba(20, 34, 57, .06);
+      }
+
+      * { box-sizing: border-box; }
+
+      body { margin: 0; min-width: 320px; }
+      .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+      body:not(.authenticated) > .topbar,
+      body:not(.authenticated) > main,
+      body:not(.authenticated) > dialog { display: none; }
+
+      .auth-screen {
+        position: fixed;
+        z-index: 20;
+        inset: 0;
+        display: grid;
+        overflow-y: auto;
+        padding: 24px;
+        place-items: center;
+        background:
+          radial-gradient(ellipse at 15% 12%, rgba(110, 143, 255, .22), transparent 36%),
+          radial-gradient(ellipse at 90% 80%, rgba(66, 187, 154, .14), transparent 34%),
+          #f5f7fb;
+      }
+      .auth-screen[hidden], .field[hidden] { display: none; }
+      .auth-card {
+        width: min(100%, 430px);
+        padding: 32px;
+        border: 1px solid rgba(226, 231, 240, .9);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 22px 64px rgba(28, 43, 73, .12);
+      }
+      .auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+      .auth-card h2 { margin: 0; font-size: 23px; letter-spacing: -.7px; }
+      .auth-copy { margin: 8px 0 21px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+      .auth-mode { display: flex; gap: 5px; margin-bottom: 20px; padding: 4px; border-radius: 10px; background: #f1f3f8; }
+      .auth-mode button { flex: 1; padding: 9px; border: 0; border-radius: 7px; color: #6b778a; background: transparent; font-weight: 650; }
+      .auth-mode button[aria-selected="true"] { color: #253650; background: #fff; box-shadow: 0 1px 4px rgba(26, 39, 60, .1); }
+      .auth-error { min-height: 18px; margin: 0 0 10px; color: #a12e2a; font-size: 12px; }
+      .auth-submit { width: 100%; margin-top: 5px; }
+      .header-actions { display: flex; align-items: center; gap: 9px; }
+      .signed-in { max-width: 160px; overflow: hidden; color: #58677b; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+      .notification-wrap { position: relative; }
+      .notification-button { position: relative; width: 40px; padding: 8px; font-size: 17px; }
+      .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -4px;
+        display: grid;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        place-items: center;
+        border: 2px solid #fff;
+        border-radius: 10px;
+        color: #fff;
+        background: #e05252;
+        font-size: 9px;
+        font-weight: 800;
+      }
+      .notification-panel {
+        position: absolute;
+        z-index: 10;
+        top: calc(100% + 12px);
+        right: 0;
+        width: min(340px, calc(100vw - 32px));
+        max-height: 380px;
+        overflow-y: auto;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: var(--shadow);
+      }
+      .notification-panel[hidden] { display: none; }
+      .notification-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 9px; }
+      .notification-heading strong { font-size: 13px; }
+      .notification-item { display: block; width: 100%; padding: 10px; border: 0; border-radius: 8px; color: #526075; background: #fff; text-align: left; font-size: 12px; line-height: 1.45; }
+      .notification-item:hover, .notification-item.unread { background: #f2f5ff; }
+      .notification-item time { display: block; margin-top: 4px; color: #8a95a6; font-size: 10px; }
+      .notification-empty { margin: 16px 5px; color: #8792a3; text-align: center; font-size: 12px; }
+      .team-list { display: grid; gap: 8px; margin-bottom: 16px; }
+      .team-member { display: flex; align-items: center; gap: 9px; padding: 9px; border-radius: 8px; background: #f7f8fb; }
+      .team-member-info { display: grid; min-width: 0; gap: 2px; }
+      .team-member-name { color: #405066; font-size: 12px; font-weight: 700; }
+      .team-member-email { color: #8490a1; font-size: 11px; overflow-wrap: anywhere; }
+      .team-form { display: flex; gap: 8px; }
+      .team-form input { flex: 1; }
+      .team-hint { margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+      .team-error { min-height: 16px; margin: 8px 0 0; color: #a12e2a; font-size: 11px; }
+
+      button, input, select, textarea { font: inherit; }
+      button { cursor: pointer; }
+
+      .topbar {
+        position: sticky;
+        z-index: 5;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 17px max(28px, calc((100vw - 1400px) / 2));
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, .94);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand { display: flex; align-items: center; gap: 12px; min-width: max-content; }
+      .brand-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border-radius: 12px;
+        color: #fff;
+        background: linear-gradient(145deg, #6685f1, #4169e1);
+        box-shadow: 0 5px 12px rgba(65, 105, 225, .25);
+        font-size: 19px;
+        font-weight: 800;
+      }
+      h1 { margin: 0; font-size: 17px; letter-spacing: -.35px; }
+      .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+      .project-create {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        width: min(100%, 570px);
+      }
+
+      input, select, textarea {
+        width: 100%;
+        min-width: 0;
+        padding: 10px 12px;
+        border: 1px solid #dce2eb;
+        border-radius: 9px;
+        outline: none;
+        color: var(--ink);
+        background: #fff;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      input:focus, select:focus, textarea:focus {
+        border-color: #829af0;
+        box-shadow: 0 0 0 3px rgba(65, 105, 225, .12);
+      }
+      input::placeholder, textarea::placeholder { color: #a0aaba; }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        font-weight: 650;
+        white-space: nowrap;
+        transition: background .15s, border-color .15s, transform .15s;
+      }
+      .button:active { transform: translateY(1px); }
+      .button-primary { color: #fff; background: var(--blue); }
+      .button-primary:hover { background: var(--blue-dark); }
+      .button-secondary { border-color: var(--line); color: #405066; background: #fff; }
+      .button-secondary:hover { border-color: #cad3e0; background: #f9fafc; }
+      .button-quiet { min-height: 34px; padding: 6px 10px; color: #516078; background: transparent; }
+      .button-quiet:hover { color: var(--blue); background: #f0f4ff; }
+      .button:disabled { cursor: wait; opacity: .65; }
+
+      main { width: min(1400px, 100%); margin: 0 auto; padding: 34px 28px 48px; }
+      .workspace-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 26px;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 1.25px;
+        text-transform: uppercase;
+      }
+      h2 { margin: 0; font-size: clamp(24px, 3vw, 30px); letter-spacing: -1px; }
+      .workspace-copy { margin: 7px 0 0; color: var(--muted); font-size: 14px; }
+      .board-controls { display: flex; align-items: center; gap: 10px; }
+      .project-select { min-width: 230px; max-width: 320px; font-weight: 600; }
+
+      .notice {
+        margin: 0 0 18px;
+        padding: 11px 14px;
+        border: 1px solid #dbe6ff;
+        border-radius: 10px;
+        color: #3453a4;
+        background: #f1f5ff;
+        font-size: 13px;
+      }
+      .notice[data-kind="error"] {
+        border-color: #f1c9c8;
+        color: #a12e2a;
+        background: #fff5f4;
+      }
+      .notice[hidden] { display: none; }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(250px, 1fr));
+        align-items: start;
+        gap: 18px;
+      }
+      .column {
+        min-height: 310px;
+        padding: 14px;
+        border: 1px solid #e8ecf3;
+        border-radius: 14px;
+        background: #eef1f6;
+      }
+      .column-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 13px; }
+      .column-title { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 14px; font-weight: 750; }
+      .column-dot { width: 9px; height: 9px; border-radius: 50%; background: #93a0b3; }
+      .column[data-status="In Progress"] .column-dot { background: #e4a436; }
+      .column[data-status="Done"] .column-dot { background: #38a77b; }
+      .task-count {
+        display: grid;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 6px;
+        place-items: center;
+        border-radius: 7px;
+        color: #657289;
+        background: #e1e6ee;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .cards { display: grid; gap: 11px; }
+      .task-card {
+        padding: 15px;
+        border: 1px solid #edf0f5;
+        border-radius: 11px;
+        background: var(--surface);
+        box-shadow: 0 3px 9px rgba(25, 39, 62, .035);
+      }
+      .task-card h4 { margin: 0; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+      .task-status-select { width: auto; margin-top: 10px; padding: 5px 8px; color: #68768a; font-size: 11px; }
+      .task-description { margin: 8px 0 0; color: #68768a; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px solid #f0f2f6;
+      }
+      .assignee { display: flex; align-items: center; gap: 8px; min-width: 0; color: #56657a; font-size: 12px; }
+      .avatar {
+        display: grid;
+        flex: 0 0 auto;
+        width: 27px;
+        height: 27px;
+        place-items: center;
+        border-radius: 50%;
+        color: #405bc0;
+        background: #e9edff;
+        font-size: 10px;
+        font-weight: 750;
+      }
+      .assignee-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .comment-toggle { flex: 0 0 auto; min-height: 31px; padding: 5px 8px; font-size: 11px; }
+      .comments-panel { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f2f6; }
+      .comments-list { display: grid; gap: 10px; }
+      .comment { padding: 9px 10px; border-radius: 8px; background: #f7f8fb; }
+      .comment-meta { display: flex; justify-content: space-between; gap: 8px; color: #8490a1; font-size: 10px; }
+      .comment-author { color: #4f5e74; font-weight: 700; }
+      .comment-content { margin: 5px 0 0; color: #445166; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .no-comments { margin: 0 0 10px; color: #8994a5; font-size: 12px; }
+      .comment-form { display: grid; gap: 7px; margin-top: 11px; }
+      .comment-form-row { display: flex; gap: 7px; }
+      .comment-form select { width: 42%; padding: 8px; font-size: 11px; }
+      .comment-form input { flex: 1; padding: 8px 10px; font-size: 12px; }
+      .comment-form .button { min-height: 34px; padding: 6px 10px; font-size: 11px; }
+      .empty-state { padding: 35px 14px; color: #8792a3; text-align: center; font-size: 12px; }
+
+      dialog {
+        width: min(460px, calc(100% - 32px));
+        max-height: min(90vh, 720px);
+        padding: 0;
+        border: 0;
+        border-radius: 16px;
+        color: var(--ink);
+        box-shadow: 0 24px 80px rgba(20, 34, 57, .24);
+      }
+      dialog::backdrop { background: rgba(20, 30, 48, .46); backdrop-filter: blur(3px); }
+      .modal { padding: 24px; }
+      .modal-heading { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+      .modal-heading h3 { margin: 0; font-size: 19px; letter-spacing: -.4px; }
+      .modal-heading p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+      .icon-button {
+        display: grid;
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border: 0;
+        border-radius: 8px;
+        color: #69768a;
+        background: #f1f3f7;
+        font-size: 19px;
+      }
+      .form-grid { display: grid; gap: 15px; }
+      .field { display: grid; gap: 7px; }
+      .field label { color: #46546a; font-size: 12px; font-weight: 700; }
+      .field textarea { min-height: 84px; resize: vertical; }
+      .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 7px; }
+
+      @media (max-width: 900px) {
+        .topbar { align-items: flex-start; flex-direction: column; padding: 15px 20px; }
+        .project-create { justify-content: flex-start; width: 100%; }
+        main { padding: 26px 20px 38px; }
+        .board { grid-template-columns: repeat(3, minmax(235px, 1fr)); overflow-x: auto; padding-bottom: 8px; }
+      }
+      @media (max-width: 560px) {
+        .project-create { align-items: stretch; flex-wrap: wrap; }
+        .project-create input { flex: 1 1 100%; }
+        .workspace-heading { align-items: stretch; flex-direction: column; }
+        .board-controls { align-items: stretch; }
+        .project-select { flex: 1; min-width: 0; }
+        .board { grid-template-columns: minmax(250px, 1fr); overflow: visible; }
+        .column { min-height: 180px; }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
+      <form class="auth-card" id="auth-form">
+        <div class="auth-brand">
+          <div class="brand-mark" aria-hidden="true">P</div>
+          <div>
+            <h2 id="auth-title">Welcome to your board</h2>
+            <p class="subtitle">Sign in to collaborate with your team</p>
+          </div>
+        </div>
+        <p class="auth-copy">Create an account or sign in to manage projects, assign tasks, and keep conversations together.</p>
+        <div class="auth-mode" role="tablist" aria-label="Account action">
+          <button type="button" role="tab" id="login-tab" aria-selected="true">Sign in</button>
+          <button type="button" role="tab" id="register-tab" aria-selected="false">Create account</button>
+        </div>
+        <p class="auth-error" id="auth-error" role="alert"></p>
+        <div class="form-grid">
+          <div class="field" id="auth-name-field" hidden>
+            <label for="auth-name">Your name</label>
+            <input id="auth-name" name="name" type="text" maxlength="80" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="auth-email">Email</label>
+            <input id="auth-email" name="email" type="email" required maxlength="254" autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="auth-password">Password</label>
+            <input id="auth-password" name="password" type="password" required minlength="8" maxlength="128" autocomplete="current-password">
+          </div>
+        </div>
+        <button class="button button-primary auth-submit" id="auth-submit" type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">P</div>
+        <div>
+          <h1>Project Management Board</h1>
+          <p class="subtitle">A clearer view of work in progress</p>
+        </div>
+      </div>
+      <form class="project-create" id="project-form">
+        <input id="project-name" name="name" type="text" placeholder="New group project name" aria-label="New group project name" required maxlength="120">
+        <input id="project-description" name="description" type="text" placeholder="Short description (optional)" aria-label="Project description">
+        <button class="button button-primary" type="submit">＋ Create project</button>
+      </form>
+      <div class="header-actions">
+        <span class="signed-in" id="signed-in-name"></span>
+        <div class="notification-wrap">
+          <button class="button button-secondary notification-button" id="notifications-toggle" type="button" aria-label="Notifications" aria-expanded="false">🔔<span class="notification-badge" id="notification-badge" hidden>0</span></button>
+          <section class="notification-panel" id="notification-panel" aria-label="Notifications" hidden>
+            <div class="notification-heading">
+              <strong>Notifications</strong>
+              <button class="button button-quiet" id="read-all-notifications" type="button">Mark all read</button>
+            </div>
+            <div id="notification-list"></div>
+          </section>
+        </div>
+        <button class="button button-secondary" id="logout-button" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="workspace-heading" aria-labelledby="workspace-title">
+        <div>
+          <p class="eyebrow">Workspace</p>
+          <h2 id="workspace-title">Your project board</h2>
+          <p class="workspace-copy">Keep the team aligned, one task at a time.</p>
+        </div>
+        <div class="board-controls">
+          <label class="sr-only" for="project-select">Select project</label>
+          <select class="project-select" id="project-select" aria-label="Select project">
+            <option value="">Loading projects…</option>
+          </select>
+          <button class="button button-primary" id="open-task-modal" type="button">＋ Create task</button>
+          <button class="button button-secondary" id="manage-team" type="button">Team</button>
+        </div>
+      </section>
+
+      <p class="notice" id="notice" role="status" aria-live="polite" hidden></p>
+
+      <section class="board" id="board" aria-label="Kanban board">
+        <article class="column" data-status="To Do">
+          <header class="column-heading">
+            <h3 class="column-title"><span class="column-dot" aria-hidden="true"></span>To Do</h3>
+            <span class="task-count" aria-label="0 tasks">0</span>
+          </header>
+          <div class="cards" data-cards-for="To Do"><p class="empty-state">No tasks here yet.</p></div>
+        </article>
+        <article class="column" data-status="In Progress">
+          <header class="column-heading">
+            <h3 class="column-title"><span class="column-dot" aria-hidden="true"></span>In Progress</h3>
+            <span class="task-count" aria-label="0 tasks">0</span>
+          </header>
+          <div class="cards" data-cards-for="In Progress"><p class="empty-state">No tasks here yet.</p></div>
+        </article>
+        <article class="column" data-status="Done">
+          <header class="column-heading">
+            <h3 class="column-title"><span class="column-dot" aria-hidden="true"></span>Done</h3>
+            <span class="task-count" aria-label="0 tasks">0</span>
+          </header>
+          <div class="cards" data-cards-for="Done"><p class="empty-state">No tasks here yet.</p></div>
+        </article>
+      </section>
+    </main>
+
+    <dialog id="task-dialog" aria-labelledby="task-dialog-title">
+      <form class="modal" id="task-form">
+        <div class="modal-heading">
+          <div>
+            <h3 id="task-dialog-title">Create a task</h3>
+            <p>Add a task and assign it to a teammate.</p>
+          </div>
+          <button class="icon-button" type="button" id="close-task-modal" aria-label="Close dialog">×</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="task-title">Task title</label>
+            <input id="task-title" name="title" type="text" required maxlength="160" placeholder="e.g. Review homepage design">
+          </div>
+          <div class="field">
+            <label for="task-description">Description</label>
+            <textarea id="task-description" name="description" placeholder="Add more details (optional)"></textarea>
+          </div>
+          <div class="field">
+            <label for="task-assignee">Assign to</label>
+            <select id="task-assignee" name="assignedTo" required></select>
+          </div>
+          <div class="field">
+            <label for="task-status">Status</label>
+            <select id="task-status" name="status">
+              <option>To Do</option>
+              <option>In Progress</option>
+              <option>Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="button button-secondary" type="button" id="cancel-task">Cancel</button>
+          <button class="button button-primary" type="submit">Create task</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="team-dialog" aria-labelledby="team-dialog-title">
+      <div class="modal">
+        <div class="modal-heading">
+          <div>
+            <h3 id="team-dialog-title">Project team</h3>
+            <p>Invite registered teammates to collaborate on this board.</p>
+          </div>
+          <button class="icon-button" type="button" id="close-team-modal" aria-label="Close dialog">×</button>
+        </div>
+        <div class="team-list" id="team-list"></div>
+        <form class="team-form" id="team-form">
+          <input id="team-email" name="email" type="email" placeholder="teammate@example.com" aria-label="Teammate email" required>
+          <button class="button button-primary" type="submit">Add member</button>
+        </form>
+        <p class="team-error" id="team-error" role="status"></p>
+        <p class="team-hint">Teammates need to create an account first. You can then add them here by email.</p>
+      </div>
+    </dialog>
+
+    <script>
+      const API_BASE = 'http://localhost:5002/api';
+      const STATUSES = ['To Do', 'In Progress', 'Done'];
+      const projectSelect = document.querySelector('#project-select');
+      const taskAssignee = document.querySelector('#task-assignee');
+      const taskDialog = document.querySelector('#task-dialog');
+      const teamDialog = document.querySelector('#team-dialog');
+      const notice = document.querySelector('#notice');
+      const authScreen = document.querySelector('#auth-screen');
+      let users = [];
+      let currentTasks = [];
+      let taskLoadId = 0;
+      let authToken = localStorage.getItem('project-management-token');
+      let signedInUser = null;
+      let authMode = 'login';
+      let socket = null;
+      let socketRetryTimer = null;
+      let notifications = [];
+
+      async function apiRequest(path, options = {}) {
+        let response;
+        try {
+          response = await fetch(`${API_BASE}${path}`, {
+            ...options,
+            headers: {
+              ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+              ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+              ...options.headers,
+            },
+          });
+        } catch (error) {
+          throw new Error('Could not connect to the API. Make sure the backend is running at localhost:5002.');
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        const result = contentType.includes('application/json')
+          ? await response.json()
+          : null;
+        if (!response.ok) {
+          if (response.status === 401 && authToken) expireSession();
+          throw new Error(result?.error || `Request failed (${response.status}).`);
+        }
+        return result;
+      }
+
+      function showNotice(message, kind = 'info') {
+        notice.textContent = message;
+        notice.dataset.kind = kind;
+        notice.hidden = !message;
+      }
+
+      function setAuthMode(mode) {
+        authMode = mode;
+        const registering = mode === 'register';
+        document.querySelector('#login-tab').setAttribute('aria-selected', String(!registering));
+        document.querySelector('#register-tab').setAttribute('aria-selected', String(registering));
+        document.querySelector('#auth-name-field').hidden = !registering;
+        document.querySelector('#auth-name').required = registering;
+        document.querySelector('#auth-password').autocomplete = registering ? 'new-password' : 'current-password';
+        document.querySelector('#auth-title').textContent = registering ? 'Create your account' : 'Welcome to your board';
+        document.querySelector('#auth-submit').textContent = registering ? 'Create account' : 'Sign in';
+        document.querySelector('#auth-error').textContent = '';
+      }
+
+      function showAuthenticatedApp(user) {
+        signedInUser = user;
+        document.body.classList.add('authenticated');
+        authScreen.hidden = true;
+        document.querySelector('#signed-in-name').textContent = user.name;
+        document.querySelector('#signed-in-name').title = user.email;
+      }
+
+      function closeSocket() {
+        clearTimeout(socketRetryTimer);
+        socketRetryTimer = null;
+        if (socket) {
+          socket.onclose = null;
+          socket.close();
+          socket = null;
+        }
+      }
+
+      function expireSession() {
+        localStorage.removeItem('project-management-token');
+        authToken = null;
+        signedInUser = null;
+        closeSocket();
+        document.body.classList.remove('authenticated');
+        authScreen.hidden = false;
+        document.querySelector('#auth-error').textContent = 'Your session expired. Please sign in again.';
+      }
+
+      function connectSocket(projectId = projectSelect.value) {
+        if (!authToken || !document.body.classList.contains('authenticated')) return;
+        closeSocket();
+        socket = new WebSocket('ws://localhost:5002');
+        socket.addEventListener('open', () => {
+          socket.send(JSON.stringify({
+            type: 'authenticate',
+            token: authToken,
+            projectId: Number(projectId) || null,
+          }));
+        });
+        socket.addEventListener('message', async (event) => {
+          let message;
+          try {
+            message = JSON.parse(event.data);
+          } catch {
+            return;
+          }
+          if (message.type === 'notification') {
+            notifications.unshift(message.notification);
+            renderNotifications();
+            showNotice(message.notification.message);
+            try {
+              await loadProjects(projectSelect.value);
+            } catch (error) {
+              showNotice(error.message, 'error');
+            }
+          }
+          if (
+            message.type === 'project-update' &&
+            String(message.projectId) === projectSelect.value &&
+            message.actorUserId !== signedInUser?.id
+          ) {
+            await loadTasks(projectSelect.value);
+          }
+        });
+        socket.addEventListener('close', () => {
+          if (socket?.readyState === WebSocket.CLOSED && authToken) {
+            socketRetryTimer = setTimeout(() => connectSocket(), 2500);
+          }
+        });
+      }
+
+      async function loadNotifications() {
+        notifications = await apiRequest('/notifications');
+        renderNotifications();
+      }
+
+      function renderNotifications() {
+        const list = document.querySelector('#notification-list');
+        const badge = document.querySelector('#notification-badge');
+        const unreadCount = notifications.filter((item) => !item.is_read).length;
+        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+        badge.hidden = unreadCount === 0;
+        list.replaceChildren();
+        if (notifications.length === 0) {
+          const empty = document.createElement('p');
+          empty.className = 'notification-empty';
+          empty.textContent = 'You are all caught up.';
+          list.append(empty);
+          return;
+        }
+        notifications.forEach((notification) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `notification-item${notification.is_read ? '' : ' unread'}`;
+          button.dataset.notificationId = notification.id;
+          button.textContent = notification.message;
+          const time = document.createElement('time');
+          time.textContent = formatDate(notification.created_at);
+          button.append(time);
+          button.addEventListener('click', async () => {
+            try {
+              if (!notification.is_read) {
+                await apiRequest(`/notifications/${notification.id}/read`, { method: 'PATCH' });
+                notification.is_read = 1;
+              }
+              if (notification.project_id) {
+                await loadProjects(notification.project_id);
+              }
+              renderNotifications();
+              document.querySelector('#notification-panel').hidden = true;
+              document.querySelector('#notifications-toggle').setAttribute('aria-expanded', 'false');
+            } catch (error) {
+              showNotice(error.message, 'error');
+            }
+          });
+          list.append(button);
+        });
+      }
+
+      function addOption(select, value, label) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        select.append(option);
+      }
+
+      function initials(name) {
+        return (name || '?')
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => part[0].toUpperCase())
+          .join('');
+      }
+
+      function formatDate(value) {
+        if (!value) return '';
+        const parsed = new Date(`${value.replace(' ', 'T')}Z`);
+        return Number.isNaN(parsed.getTime())
+          ? ''
+          : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(parsed);
+      }
+
+      function createComment(comment) {
+        const wrapper = document.createElement('article');
+        wrapper.className = 'comment';
+        const meta = document.createElement('div');
+        meta.className = 'comment-meta';
+        const author = document.createElement('span');
+        author.className = 'comment-author';
+        author.textContent = comment.user_name || 'Teammate';
+        const date = document.createElement('time');
+        date.textContent = formatDate(comment.created_at);
+        meta.append(author, date);
+        const content = document.createElement('p');
+        content.className = 'comment-content';
+        content.textContent = comment.content;
+        wrapper.append(meta, content);
+        return wrapper;
+      }
+
+      function createTaskCard(task) {
+        const card = document.createElement('article');
+        card.className = 'task-card';
+
+        const title = document.createElement('h4');
+        title.textContent = task.title;
+        card.append(title);
+
+        if (task.description) {
+          const description = document.createElement('p');
+          description.className = 'task-description';
+          description.textContent = task.description;
+          card.append(description);
+        }
+
+        const statusSelect = document.createElement('select');
+        statusSelect.className = 'task-status-select';
+        statusSelect.setAttribute('aria-label', `Change status for ${task.title}`);
+        STATUSES.forEach((status) => addOption(statusSelect, status, status));
+        statusSelect.value = task.status;
+        statusSelect.addEventListener('change', async () => {
+          statusSelect.disabled = true;
+          try {
+            await apiRequest(`/tasks/${task.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status: statusSelect.value }),
+            });
+            currentTasks = currentTasks.map((item) =>
+              item.id === task.id ? { ...item, status: statusSelect.value } : item
+            );
+            renderBoard(currentTasks);
+            showNotice(`Task moved to ${statusSelect.value}.`);
+          } catch (error) {
+            showNotice(error.message, 'error');
+            statusSelect.value = task.status;
+          } finally {
+            statusSelect.disabled = false;
+          }
+        });
+        card.append(statusSelect);
+
+        const footer = document.createElement('div');
+        footer.className = 'card-footer';
+        const assignee = document.createElement('div');
+        assignee.className = 'assignee';
+        const avatar = document.createElement('span');
+        avatar.className = 'avatar';
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.textContent = initials(task.assignee_name);
+        const assigneeName = document.createElement('span');
+        assigneeName.className = 'assignee-name';
+        assigneeName.textContent = task.assignee_name || 'Unassigned';
+        assignee.append(avatar, assigneeName);
+
+        const commentButton = document.createElement('button');
+        commentButton.className = 'button button-quiet comment-toggle';
+        commentButton.type = 'button';
+        commentButton.setAttribute('aria-expanded', 'false');
+        commentButton.textContent = `▤ ${task.comments.length}`;
+        commentButton.setAttribute('aria-label', `View ${task.comments.length} comments`);
+        footer.append(assignee, commentButton);
+        card.append(footer);
+
+        const panel = document.createElement('section');
+        panel.className = 'comments-panel';
+        panel.hidden = true;
+        panel.setAttribute('aria-label', `Comments for ${task.title}`);
+        const commentsList = document.createElement('div');
+        commentsList.className = 'comments-list';
+        if (task.comments.length === 0) {
+          const empty = document.createElement('p');
+          empty.className = 'no-comments';
+          empty.textContent = 'No comments yet. Start the conversation.';
+          commentsList.append(empty);
+        } else {
+          task.comments.forEach((comment) => commentsList.append(createComment(comment)));
+        }
+        panel.append(commentsList);
+
+        const commentForm = document.createElement('form');
+        commentForm.className = 'comment-form';
+        const row = document.createElement('div');
+        row.className = 'comment-form-row';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'content';
+        input.required = true;
+        input.maxLength = 2000;
+        input.placeholder = 'Write a comment…';
+        input.setAttribute('aria-label', 'Write a comment');
+        const submit = document.createElement('button');
+        submit.className = 'button button-primary';
+        submit.type = 'submit';
+        submit.textContent = 'Send';
+        row.append(input, submit);
+        commentForm.append(row);
+        panel.append(commentForm);
+        card.append(panel);
+
+        commentButton.addEventListener('click', () => {
+          panel.hidden = !panel.hidden;
+          commentButton.setAttribute('aria-expanded', String(!panel.hidden));
+          if (!panel.hidden) input.focus();
+        });
+
+        commentForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          submit.disabled = true;
+          try {
+            const comment = await apiRequest(`/tasks/${task.id}/comments`, {
+              method: 'POST',
+              body: JSON.stringify({
+                content: input.value.trim(),
+              }),
+            });
+            task.comments.push(comment);
+            commentsList.querySelector('.no-comments')?.remove();
+            commentsList.append(createComment(comment));
+            input.value = '';
+            commentButton.textContent = `▤ ${task.comments.length}`;
+            commentButton.setAttribute('aria-label', `View ${task.comments.length} comments`);
+            showNotice('Comment added.');
+          } catch (error) {
+            showNotice(error.message, 'error');
+          } finally {
+            submit.disabled = false;
+          }
+        });
+
+        return card;
+      }
+
+      function renderBoard(tasks) {
+        currentTasks = tasks;
+        for (const status of STATUSES) {
+          const column = document.querySelector(`[data-status="${status}"]`);
+          const cards = column.querySelector('.cards');
+          const statusTasks = tasks.filter((task) => task.status === status);
+          const count = column.querySelector('.task-count');
+          count.textContent = statusTasks.length;
+          count.setAttribute('aria-label', `${statusTasks.length} ${statusTasks.length === 1 ? 'task' : 'tasks'}`);
+          cards.replaceChildren();
+          if (statusTasks.length === 0) {
+            const empty = document.createElement('p');
+            empty.className = 'empty-state';
+            empty.textContent = 'No tasks here yet.';
+            cards.append(empty);
+          } else {
+            statusTasks.forEach((task) => cards.append(createTaskCard(task)));
+          }
+        }
+      }
+
+      async function loadTasks(projectId) {
+        const requestId = ++taskLoadId;
+        if (!projectId) {
+          users = [];
+          taskAssignee.replaceChildren();
+          renderBoard([]);
+          return;
+        }
+        showNotice('');
+        try {
+          const [tasks, projectUsers] = await Promise.all([
+            apiRequest(`/projects/${encodeURIComponent(projectId)}/tasks`),
+            apiRequest(`/projects/${encodeURIComponent(projectId)}/users`),
+          ]);
+          if (requestId !== taskLoadId) return;
+          users = projectUsers;
+          taskAssignee.replaceChildren();
+          users.forEach((user) => addOption(taskAssignee, user.id, `${user.name} (${user.email})`));
+          taskAssignee.disabled = users.length === 0;
+          renderBoard(tasks);
+        } catch (error) {
+          if (requestId !== taskLoadId) return;
+          users = [];
+          taskAssignee.replaceChildren();
+          taskAssignee.disabled = true;
+          renderBoard([]);
+          showNotice(error.message, 'error');
+        }
+      }
+
+      async function loadProjects(selectedId) {
+        const projects = await apiRequest('/projects');
+        projectSelect.replaceChildren();
+        if (projects.length === 0) {
+          addOption(projectSelect, '', 'Create a project to begin');
+          connectSocket(null);
+          renderBoard([]);
+          return;
+        }
+        projects.forEach((project) => addOption(projectSelect, project.id, project.name));
+        const nextId = selectedId && projects.some((project) => String(project.id) === String(selectedId))
+          ? String(selectedId)
+          : String(projects[0].id);
+        projectSelect.value = nextId;
+        connectSocket(nextId);
+        await loadTasks(nextId);
+      }
+
+      async function initializeApp(user) {
+        showAuthenticatedApp(user);
+        try {
+          await Promise.all([loadProjects(), loadNotifications()]);
+        } catch (error) {
+          showNotice(error.message, 'error');
+        }
+      }
+
+      async function restoreSession() {
+        if (!authToken) return;
+        try {
+          const result = await apiRequest('/auth/me');
+          await initializeApp(result.user);
+        } catch (error) {
+          if (authToken) {
+            document.querySelector('#auth-error').textContent = error.message;
+          }
+        }
+      }
+
+      projectSelect.addEventListener('change', () => {
+        connectSocket(projectSelect.value);
+        loadTasks(projectSelect.value);
+      });
+
+      document.querySelector('#project-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const submit = form.querySelector('button[type="submit"]');
+        const values = new FormData(form);
+        submit.disabled = true;
+        try {
+          const project = await apiRequest('/projects', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: values.get('name').trim(),
+              description: values.get('description').trim(),
+            }),
+          });
+          form.reset();
+          await loadProjects(project.id);
+          showNotice(`Project "${project.name}" created.`);
+        } catch (error) {
+          showNotice(error.message, 'error');
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      document.querySelector('#open-task-modal').addEventListener('click', () => {
+        if (!projectSelect.value) {
+          showNotice('Create or select a project before adding a task.', 'error');
+          return;
+        }
+        if (users.length === 0) {
+          showNotice('No users are available to assign tasks. Add users to the database first.', 'error');
+          return;
+        }
+        taskDialog.showModal();
+        document.querySelector('#task-title').focus();
+      });
+
+      function closeTaskDialog() {
+        taskDialog.close();
+      }
+      document.querySelector('#close-task-modal').addEventListener('click', closeTaskDialog);
+      document.querySelector('#cancel-task').addEventListener('click', closeTaskDialog);
+      taskDialog.addEventListener('click', (event) => {
+        if (event.target === taskDialog) closeTaskDialog();
+      });
+
+      document.querySelector('#task-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const submit = form.querySelector('button[type="submit"]');
+        const values = new FormData(form);
+        const projectId = Number(projectSelect.value);
+        submit.disabled = true;
+        try {
+          const task = await apiRequest('/tasks', {
+            method: 'POST',
+            body: JSON.stringify({
+              projectId,
+              title: values.get('title').trim(),
+              description: values.get('description').trim(),
+              assignedTo: Number(values.get('assignedTo')),
+              status: values.get('status'),
+            }),
+          });
+          closeTaskDialog();
+          form.reset();
+          if (projectSelect.value === String(projectId)) {
+            const updatedTasks = currentTasks.filter((item) => item.id !== task.id);
+            updatedTasks.push(task);
+            renderBoard(updatedTasks);
+          }
+          showNotice('Task created.');
+        } catch (error) {
+          showNotice(error.message, 'error');
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      document.querySelector('#login-tab').addEventListener('click', () => setAuthMode('login'));
+      document.querySelector('#register-tab').addEventListener('click', () => setAuthMode('register'));
+      document.querySelector('#auth-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const submit = document.querySelector('#auth-submit');
+        const values = new FormData(form);
+        submit.disabled = true;
+        document.querySelector('#auth-error').textContent = '';
+        try {
+          const result = await apiRequest(`/auth/${authMode}`, {
+            method: 'POST',
+            body: JSON.stringify({
+              ...(authMode === 'register' ? { name: values.get('name').trim() } : {}),
+              email: values.get('email').trim(),
+              password: values.get('password'),
+            }),
+          });
+          authToken = result.token;
+          localStorage.setItem('project-management-token', authToken);
+          await initializeApp(result.user);
+        } catch (error) {
+          document.querySelector('#auth-error').textContent = error.message;
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      document.querySelector('#logout-button').addEventListener('click', async () => {
+        try {
+          await apiRequest('/auth/logout', { method: 'POST' });
+        } catch (error) {
+          showNotice(error.message, 'error');
+        } finally {
+          localStorage.removeItem('project-management-token');
+          authToken = null;
+          signedInUser = null;
+          closeSocket();
+          document.body.classList.remove('authenticated');
+          authScreen.hidden = false;
+          document.querySelector('#auth-form').reset();
+          setAuthMode('login');
+        }
+      });
+
+      document.querySelector('#notifications-toggle').addEventListener('click', async () => {
+        const panel = document.querySelector('#notification-panel');
+        panel.hidden = !panel.hidden;
+        document.querySelector('#notifications-toggle').setAttribute('aria-expanded', String(!panel.hidden));
+        if (!panel.hidden) {
+          try {
+            await loadNotifications();
+          } catch (error) {
+            showNotice(error.message, 'error');
+          }
+        }
+      });
+
+      document.querySelector('#read-all-notifications').addEventListener('click', async () => {
+        try {
+          await apiRequest('/notifications/read-all', { method: 'PATCH' });
+          notifications.forEach((notification) => { notification.is_read = 1; });
+          renderNotifications();
+        } catch (error) {
+          showNotice(error.message, 'error');
+        }
+      });
+
+      async function loadTeam() {
+        if (!projectSelect.value) return;
+        const members = await apiRequest(`/projects/${projectSelect.value}/members`);
+        const list = document.querySelector('#team-list');
+        list.replaceChildren();
+        members.forEach((member) => {
+          const row = document.createElement('div');
+          row.className = 'team-member';
+          const avatar = document.createElement('span');
+          avatar.className = 'avatar';
+          avatar.textContent = initials(member.name);
+          const info = document.createElement('div');
+          info.className = 'team-member-info';
+          const name = document.createElement('span');
+          name.className = 'team-member-name';
+          name.textContent = `${member.name}${member.id === signedInUser.id ? ' (you)' : ''}`;
+          const email = document.createElement('span');
+          email.className = 'team-member-email';
+          email.textContent = `${member.email} · ${member.role}`;
+          info.append(name, email);
+          row.append(avatar, info);
+          list.append(row);
+        });
+      }
+
+      document.querySelector('#manage-team').addEventListener('click', async () => {
+        if (!projectSelect.value) {
+          showNotice('Create or select a project before managing its team.', 'error');
+          return;
+        }
+        document.querySelector('#team-error').textContent = '';
+        try {
+          await loadTeam();
+          teamDialog.showModal();
+        } catch (error) {
+          showNotice(error.message, 'error');
+        }
+      });
+
+      document.querySelector('#team-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const submit = form.querySelector('button[type="submit"]');
+        const projectId = projectSelect.value;
+        submit.disabled = true;
+        document.querySelector('#team-error').textContent = '';
+        try {
+          const member = await apiRequest(`/projects/${projectId}/members`, {
+            method: 'POST',
+            body: JSON.stringify({ email: document.querySelector('#team-email').value.trim() }),
+          });
+          form.reset();
+          await loadTeam();
+          if (projectSelect.value === projectId) await loadTasks(projectId);
+          showNotice(`${member.name} added to the project.`);
+        } catch (error) {
+          document.querySelector('#team-error').textContent = error.message;
+        } finally {
+          submit.disabled = false;
+        }
+      });
+
+      function closeTeamDialog() {
+        teamDialog.close();
+      }
+      document.querySelector('#close-team-modal').addEventListener('click', closeTeamDialog);
+      teamDialog.addEventListener('click', (event) => {
+        if (event.target === teamDialog) closeTeamDialog();
+      });
+
+      restoreSession();
+    </script>
+  </body>
+</html>

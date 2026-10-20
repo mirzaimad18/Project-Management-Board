@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+project_management.db
+project_management.db-shm
+project_management.db-wal
